@@ -7,12 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.NotificationsOff
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -20,47 +15,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.work.Constraints
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequest
-import androidx.work.WorkManager
-import com.mansao.dicodingfundamentalsubmission.worker.MyWorker
-import java.util.concurrent.TimeUnit
 
-private lateinit var workManager: WorkManager
-private lateinit var periodicWorkRequest: PeriodicWorkRequest
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     settingsViewModel: SettingsViewModel = hiltViewModel(),
-    onDarkModeChanged: (Boolean) -> Unit
+    onDarkModeChanged: (Boolean) -> Unit,
+    onNotificationChanged: (Boolean) -> Unit
 ) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    workManager = WorkManager.getInstance(context)
 
-    val constraints = Constraints.Builder()
-        .setRequiredNetworkType(NetworkType.CONNECTED)
-        .build()
-
-    periodicWorkRequest = PeriodicWorkRequest.Builder(MyWorker::class.java, 15, TimeUnit.MINUTES)
-        .setConstraints(constraints)
-        .build()
 
     val isPushNotification by settingsViewModel.isPushNotification.collectAsState()
     val isDarkMode by settingsViewModel.isDarkMode.collectAsState()
 
-    // Update the notification state based on the current setting
-    updateNotificationState(isPushNotification.isPush, periodicWorkRequest, lifecycleOwner)
-
+    Log.d(" state", "notification :$isPushNotification.toString()")
+    Log.d(" state", "theme :$isDarkMode.toString()")
     Column {
+
         Row(
             modifier = modifier
                 .fillMaxWidth()
@@ -68,25 +43,25 @@ fun SettingsScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = isPushNotification.title,
+                text = "Push Notification",
                 modifier = Modifier.padding(top = 4.dp),
                 fontSize = 20.sp
             )
-            IconButton(onClick = {
-                // Toggle the push notification state
-                val newState = !isPushNotification.isPush
-                settingsViewModel.savePushNotificationState(newState)
-
-                // Update notification state to start or stop periodic task
-                updateNotificationState(newState, periodicWorkRequest, lifecycleOwner)
-            }) {
-                Icon(
-                    imageVector = if (isPushNotification.isPush) Icons.Default.Notifications else Icons.Default.NotificationsOff,
-                    contentDescription = null
-                )
-            }
+            Switch(
+                checked = isPushNotification.isPush,
+                onCheckedChange = { isChecked ->
+                    settingsViewModel.savePushNotificationState(isChecked)
+                    onNotificationChanged(isChecked)
+                },
+                thumbContent = {
+                    Icon(
+                        imageVector = isPushNotification.icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(SwitchDefaults.IconSize)
+                    )
+                },
+            )
         }
-
         Row(
             modifier = modifier
                 .fillMaxWidth()
@@ -112,44 +87,3 @@ fun SettingsScreen(
     }
 }
 
-private fun startPeriodicTask(
-    periodicWorkRequest: PeriodicWorkRequest,
-    lifecycleOwner: LifecycleOwner
-
-) {
-
-    workManager.enqueue(periodicWorkRequest)
-    workManager.getWorkInfoByIdLiveData(periodicWorkRequest.id)
-        .observe(lifecycleOwner) { workInfo ->
-            val statusResult = workInfo.state.name
-            Log.d("start Work", "Status : $statusResult")
-        }
-
-}
-
-private fun cancelWorkPeriodicTask(
-    periodicWorkRequest: PeriodicWorkRequest,
-    lifecycleOwner: LifecycleOwner
-) {
-    workManager.cancelWorkById(periodicWorkRequest.id)
-    workManager.getWorkInfoByIdLiveData(periodicWorkRequest.id)
-        .observe(lifecycleOwner) { workInfo ->
-            val statusResult = workInfo.state.name
-            Log.d("Cancel Work", "Status : $statusResult")
-        }
-}
-
-fun updateNotificationState(
-    isChecked: Boolean,
-    periodicWorkRequest: PeriodicWorkRequest,
-    lifecycleOwner: LifecycleOwner
-) {
-    Log.d("is checked:", isChecked.toString())
-    if (isChecked) startPeriodicTask(
-        periodicWorkRequest,
-        lifecycleOwner
-    ) else cancelWorkPeriodicTask(
-        periodicWorkRequest, lifecycleOwner
-    )
-
-}

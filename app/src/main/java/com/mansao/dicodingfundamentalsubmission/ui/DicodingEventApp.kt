@@ -35,7 +35,8 @@ import com.mansao.dicodingfundamentalsubmission.ui.screen.settings.SettingsScree
 
 @Composable
 fun DicodingEventApp(
-    onDarkModeChanged: (Boolean) -> Unit
+    onDarkModeChanged: (Boolean) -> Unit,
+    onNotificationChanged: (Boolean) -> Unit
 
 ) {
     val navController = rememberNavController()
@@ -90,7 +91,7 @@ fun DicodingEventApp(
                 }
 
                 composable<Screen.Settings> {
-                    SettingsScreen(onDarkModeChanged = onDarkModeChanged)
+                    SettingsScreen(onDarkModeChanged = onDarkModeChanged, onNotificationChanged = onNotificationChanged)
                 }
             }
         }
