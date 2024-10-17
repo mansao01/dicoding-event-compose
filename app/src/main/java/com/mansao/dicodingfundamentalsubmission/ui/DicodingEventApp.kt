@@ -30,8 +30,8 @@ import com.mansao.dicodingfundamentalsubmission.ui.navigation.Screen
 import com.mansao.dicodingfundamentalsubmission.ui.screen.detail.DetailScreen
 import com.mansao.dicodingfundamentalsubmission.ui.screen.finish.FinishedScreen
 import com.mansao.dicodingfundamentalsubmission.ui.screen.home.HomeScreen
-import com.mansao.dicodingfundamentalsubmission.ui.screen.upcoming.UpcomingScreen
 import com.mansao.dicodingfundamentalsubmission.ui.screen.settings.SettingsScreen
+import com.mansao.dicodingfundamentalsubmission.ui.screen.upcoming.UpcomingScreen
 
 @Composable
 fun DicodingEventApp(
@@ -44,10 +44,15 @@ fun DicodingEventApp(
     val currentDestination = navBackStackEntry?.destination
     Scaffold(
         bottomBar = {
-            BottomBar(
-                navController = navController,
-                currentDestination = currentDestination
-            )
+            if (currentDestination?.route == "com.mansao.dicodingfundamentalsubmission.ui.navigation.Screen.Home" ||
+                currentDestination?.route == "com.mansao.dicodingfundamentalsubmission.ui.navigation.Screen.Upcoming" ||
+                currentDestination?.route == "com.mansao.dicodingfundamentalsubmission.ui.navigation.Screen.Finished"
+            ) {
+                BottomBar(
+                    navController = navController,
+                    currentDestination = currentDestination
+                )
+            }
         }
     ) { scaffoldPadding ->
         Surface(
@@ -91,7 +96,10 @@ fun DicodingEventApp(
                 }
 
                 composable<Screen.Settings> {
-                    SettingsScreen(onDarkModeChanged = onDarkModeChanged, onNotificationChanged = onNotificationChanged)
+                    SettingsScreen(
+                        onDarkModeChanged = onDarkModeChanged,
+                        onNotificationChanged = onNotificationChanged,
+                        navigateBack = { navController.navigateUp() })
                 }
             }
         }
@@ -107,7 +115,6 @@ fun BottomBar(navController: NavHostController, currentDestination: NavDestinati
     )
     NavigationBar {
         bottomNavigationItems.forEach { navigationItem ->
-
             NavigationBarItem(
                 selected = currentDestination?.hierarchy?.any { it.hasRoute(navigationItem.screen::class) } == true,
                 label = {
@@ -127,9 +134,8 @@ fun BottomBar(navController: NavHostController, currentDestination: NavDestinati
                         launchSingleTop = true
                         restoreState = true
                     }
-                },
-
-                )
+                }
+            )
         }
     }
 
