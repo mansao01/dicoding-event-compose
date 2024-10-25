@@ -74,7 +74,7 @@ fun DicodingEventApp(
 
                 composable<Screen.Detail> {
                     val data = it.toRoute<Screen.Detail>()
-                    DetailScreen(data.id)
+                    DetailScreen(data.id, navigateBack = { navController.navigateUp() })
                 }
 
                 composable<Screen.Upcoming> {
